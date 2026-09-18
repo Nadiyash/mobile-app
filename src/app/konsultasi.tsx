@@ -38,7 +38,6 @@ export default function KonsultasiScreen() {
   const userId = session?.user.id ?? 'guest-user';
   const userName = session?.user.email?.split('@')[0] ?? 'Pasien';
 
-  // Ubah data mentah dari Stream jadi bentuk yang gampang dipakai FlatList
   const mapMessage = useCallback(
     (msg: any): ChatMessage => ({
       id: msg.id,
@@ -57,14 +56,9 @@ export default function KonsultasiScreen() {
 
     const setup = async () => {
       try {
-        // stream-chat (bukan stream-chat-expo) = pure JS client, no native module,
-        // jadi aman jalan di Expo Go.
         const client = StreamChat.getInstance(STREAM_API_KEY);
         clientRef.current = client;
 
-        // NOTE: devToken cuma boleh dipake kalau "Disable Auth Checks" di-enable
-        // di Stream Dashboard (App Settings > Auth). Untuk production,
-        // token HARUS digenerate di backend pakai API Secret, jangan di client.
         const token = client.devToken(userId);
 
         if (!client.user) {
@@ -84,7 +78,6 @@ export default function KonsultasiScreen() {
         setMessages(ch.state.messages.map(mapMessage));
         setReady(true);
 
-        // Dengerin pesan baru yang masuk real-time
         ch.on('message.new', (event) => {
           if (!event.message) return;
           setMessages((prev) => [...prev, mapMessage(event.message)]);
@@ -110,8 +103,6 @@ export default function KonsultasiScreen() {
     setInputText('');
     try {
       await channel.sendMessage({ text });
-      // Pesan sendiri akan ikut masuk lewat event 'message.new' juga,
-      // jadi gak perlu ditambahin manual ke state di sini.
     } catch (err) {
       console.error('Gagal kirim pesan:', err);
     } finally {

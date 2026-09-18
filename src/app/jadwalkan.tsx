@@ -44,21 +44,17 @@ function getNextDateForHari(hari: string) {
 export default function JadwalkanScreen() {
   const { session } = useAuth();
 
-  // Step 1: Rumah Sakit
   const [rsList, setRsList] = useState<RumahSakit[]>([]);
   const [search, setSearch] = useState('');
   const [selectedRs, setSelectedRs] = useState<RumahSakit | null>(null);
 
-  // Step 2: Poli
   const [poliList, setPoliList] = useState<Poli[]>([]);
   const [selectedPoli, setSelectedPoli] = useState<Poli | null>(null);
 
-  // Step 3: Dokter + jadwal
   const [dokterList, setDokterList] = useState<Dokter[]>([]);
   const [selectedHari, setSelectedHari] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
 
-  // Step 4: Hasil booking
   const [bookingResult, setBookingResult] = useState<{
     nomor: string;
     dokterNama: string;
@@ -80,7 +76,6 @@ export default function JadwalkanScreen() {
       });
   }, []);
 
-  // Fetch poli setelah RS dipilih
   useEffect(() => {
     if (!selectedRs) return;
     supabase
@@ -94,7 +89,6 @@ export default function JadwalkanScreen() {
     setBookingResult(null);
   }, [selectedRs]);
 
-  // Fetch dokter setelah poli dipilih
   useEffect(() => {
     if (!selectedRs || !selectedPoli) return;
     const fetchDokter = async () => {
@@ -126,7 +120,7 @@ export default function JadwalkanScreen() {
       pasien_id: session.user.id,
       dokter_id: dokter.id,
       jadwal_id: jadwal.id,
-      kategori: 'Umum', // sementara default, belum ada fitur BPJS/Umum
+      kategori: 'Umum', 
       nomor_antrian: nomorAntrian,
       status: 'menunggu',
     });
@@ -157,7 +151,6 @@ export default function JadwalkanScreen() {
         <Text style={styles.pageTitle}>Jadwalkan Pemeriksaan</Text>
         <Text style={styles.pageSubtitle}>Jadwalkan pemeriksaan sesuai kebutuhan Anda</Text>
 
-        {/* STEP 1: PILIH RUMAH SAKIT */}
         <View style={styles.stepRow}>
           <View style={styles.stepBadge}>
             <Text style={styles.stepBadgeText}>1</Text>
@@ -195,7 +188,6 @@ export default function JadwalkanScreen() {
           );
         })}
 
-        {/* STEP 2: PILIH POLI */}
         {selectedRs && (
           <>
             <View style={[styles.stepRow, { marginTop: 24 }]}>
@@ -224,7 +216,6 @@ export default function JadwalkanScreen() {
           </>
         )}
 
-        {/* STEP 3: PILIH DOKTER */}
         {selectedRs && selectedPoli && (
           <>
             <View style={[styles.stepRow, { marginTop: 24 }]}>
@@ -293,7 +284,6 @@ export default function JadwalkanScreen() {
           </>
         )}
 
-        {/* STEP 4: NOMOR ANTRIAN */}
         {bookingResult && (
           <>
             <View style={[styles.stepRow, { marginTop: 24 }]}>

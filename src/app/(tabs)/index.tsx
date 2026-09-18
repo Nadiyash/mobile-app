@@ -11,15 +11,9 @@ import { router } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { supabase } from '@/lib/supabase';
 import { Header } from '@/components/header';
+import { POLI_ICON } from '@/constants/poli-icons';
 
 type Poli = { id: string; nama: string };
-
-const POLI_ICON: Record<string, keyof typeof MaterialCommunityIcons.glyphMap> = {
-  Umum: 'stethoscope',
-  Gigi: 'tooth-outline',
-  Anak: 'emoticon-happy-outline',
-  Kulit: 'emoticon-outline',
-};
 
 export default function HomeScreen() {
   const [poli, setPoli] = useState<Poli[]>([]);
@@ -41,7 +35,6 @@ export default function HomeScreen() {
       <Header />
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
 
-        {/* HERO */}
         <View style={styles.hero}>
           <Text style={styles.heroTitle}>Kesehatan Anda,{'\n'}Genggaman Anda</Text>
           <Text style={styles.heroSubtitle}>
@@ -62,7 +55,6 @@ export default function HomeScreen() {
             <Text style={styles.btnSecondaryText}>Konsultasi Online</Text>
           </TouchableOpacity>
 
-          {/* SEARCH CARD */}
           <View style={styles.searchCard}>
             <View style={styles.tabRow}>
               {tabs.map((tab) => (
@@ -91,7 +83,6 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {/* POLI & SPESIALISASI */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Poli & Spesialisasi</Text>

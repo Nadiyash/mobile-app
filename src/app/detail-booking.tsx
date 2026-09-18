@@ -4,6 +4,7 @@ import { Header } from '@/components/header';
 
 export default function DetailBookingScreen() {
   const params = useLocalSearchParams<{
+    nama: string;
     nomor: string;
     dokterNama: string;
     poliNama: string;
@@ -15,7 +16,7 @@ export default function DetailBookingScreen() {
   }>();
 
   const rows = [
-    { label: 'Pasien', value: 'Pasien' }, // placeholder, nanti diganti data login
+    { label: 'Pasien', value: params.nama }, 
     { label: 'Dokter', value: params.dokterNama },
     { label: 'Spesialis/Poli', value: params.poliNama },
     { label: 'Rumah Sakit', value: params.rsNama },
