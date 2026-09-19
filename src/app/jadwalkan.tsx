@@ -6,16 +6,20 @@ import {
   TouchableOpacity,
   ScrollView,
   StyleSheet,
+  Image,
 } from 'react-native';
 import { router } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { Header } from '@/components/header';
 import { useAuth } from '@/context/auth-context';
+import { Avatar } from '@/components/avatar';
+import { POLI_ICON } from '@/constants/poli-icons'; 
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
-type RumahSakit = { id: string; nama: string; alamat: string };
+type RumahSakit = { id: string; nama: string; alamat: string; foto_url: string | null };
 type Poli = { id: string; nama: string };
 type Jadwal = { id: string; hari: string; jam_mulai: string; jam_selesai: string; kuota: number };
-type Dokter = { id: string; nama: string; jadwal_dokter: Jadwal[] };
+type Dokter = { id: string; nama: string; foto_url: string | null; jadwal_dokter: Jadwal[] };
 
 const HARI_INDEX: Record<string, number> = {
   Minggu: 0,
@@ -52,11 +56,13 @@ export default function JadwalkanScreen() {
   const [selectedPoli, setSelectedPoli] = useState<Poli | null>(null);
 
   const [dokterList, setDokterList] = useState<Dokter[]>([]);
+  const [bookedCount, setBookedCount] = useState<Record<string, number>>({});
   const [selectedHari, setSelectedHari] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
 
   const [bookingResult, setBookingResult] = useState<{
     nomor: string;
+    namaPasien: string;
     dokterNama: string;
     poliNama: string;
     rsNama: string;
@@ -94,7 +100,7 @@ export default function JadwalkanScreen() {
     const fetchDokter = async () => {
       const { data, error } = await supabase
         .from('dokter')
-        .select('id, nama, jadwal_dokter(id, hari, jam_mulai, jam_selesai, kuota)')
+        .select('id, nama, foto_url, jadwal_dokter(id, hari, jam_mulai, jam_selesai, kuota)')
         .eq('rumah_sakit_id', selectedRs.id)
         .eq('poli_id', selectedPoli.id);
       if (!error && data) setDokterList(data as any);
@@ -106,6 +112,37 @@ export default function JadwalkanScreen() {
   const filteredRs = rsList.filter((rs) =>
     rs.nama.toLowerCase().includes(search.toLowerCase())
   );
+
+  useEffect(() => {
+    if (!selectedRs || !selectedPoli) return;
+    const fetchDokter = async () => {
+      const { data, error } = await supabase
+        .from('dokter')
+        .select('id, nama, foto_url, jadwal_dokter(id, hari, jam_mulai, jam_selesai, kuota)')
+        .eq('rumah_sakit_id', selectedRs.id)
+        .eq('poli_id', selectedPoli.id);
+      if (!error && data) {
+        setDokterList(data as any);
+
+        const jadwalIds = (data as any).flatMap((d: Dokter) => d.jadwal_dokter.map((j) => j.id));
+        if (jadwalIds.length > 0) {
+          const { data: bookings } = await supabase
+            .from('booking')
+            .select('jadwal_id')
+            .in('jadwal_id', jadwalIds)
+            .neq('status', 'batal');
+
+          const counts: Record<string, number> = {};
+          bookings?.forEach((b) => {
+            counts[b.jadwal_id] = (counts[b.jadwal_id] ?? 0) + 1;
+          });
+          setBookedCount(counts);
+        }
+      }
+    };
+    fetchDokter();
+    setBookingResult(null);
+  }, [selectedRs, selectedPoli]);
 
   const handleBooking = async (dokter: Dokter, jadwal: Jadwal) => {
     if (!session) {
@@ -120,20 +157,28 @@ export default function JadwalkanScreen() {
       pasien_id: session.user.id,
       dokter_id: dokter.id,
       jadwal_id: jadwal.id,
-      kategori: 'Umum', 
+      kategori: 'Umum',
       nomor_antrian: nomorAntrian,
       status: 'menunggu',
     });
 
-    setSubmitting(false);
-
     if (error) {
+      setSubmitting(false);
       console.log('Booking error:', error);
       return;
     }
 
+    const { data: userProfile } = await supabase
+      .from('users')
+      .select('nama')
+      .eq('id', session.user.id)
+      .single();
+
+    setSubmitting(false);
+
     setBookingResult({
       nomor: nomorAntrian,
+      namaPasien: userProfile?.nama ?? 'Pasien',
       dokterNama: dokter.nama,
       poliNama: selectedPoli!.nama,
       rsNama: selectedRs!.nama,
@@ -173,18 +218,17 @@ export default function JadwalkanScreen() {
         {filteredRs.map((item) => {
           const active = selectedRs?.id === item.id;
           return (
-            <TouchableOpacity
-              key={item.id}
-              style={[styles.card, active && styles.cardActive]}
-              onPress={() => setSelectedRs(item)}
-            >
-              <Text style={[styles.cardTitle, active && styles.cardTitleActive]}>
-                {item.nama}
-              </Text>
-              <Text style={[styles.cardSub, active && styles.cardSubActive]}>
-                {item.alamat}
-              </Text>
-            </TouchableOpacity>
+          <TouchableOpacity
+            key={item.id}
+            style={[styles.rsCard, active && styles.cardActive]} 
+            onPress={() => setSelectedRs(item)}
+          >
+            <Avatar uri={item.foto_url} size={52} icon="domain" />
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.cardTitle, active && styles.cardTitleActive]}>{item.nama}</Text>
+              <Text style={[styles.cardSub, active && styles.cardSubActive]}>{item.alamat}</Text>
+            </View>
+          </TouchableOpacity>
           );
         })}
 
@@ -201,14 +245,9 @@ export default function JadwalkanScreen() {
               {poliList.map((p) => {
                 const active = selectedPoli?.id === p.id;
                 return (
-                  <TouchableOpacity
-                    key={p.id}
-                    style={[styles.poliCard, active && styles.poliCardActive]}
-                    onPress={() => setSelectedPoli(p)}
-                  >
-                    <Text style={[styles.poliLabel, active && styles.poliLabelActive]}>
-                      {p.nama}
-                    </Text>
+                  <TouchableOpacity key={p.id} style={[styles.poliCard, active && styles.poliCardActive]} onPress={() => setSelectedPoli(p)}>
+                    <MaterialCommunityIcons name={POLI_ICON[p.nama] ?? 'help-circle-outline'} size={24} color={active ? '#FFFFFF' : '#4A3FC4'} />
+                    <Text style={[styles.poliLabel, active && styles.poliLabelActive]}>{p.nama}</Text>
                   </TouchableOpacity>
                 );
               })}
@@ -237,22 +276,34 @@ export default function JadwalkanScreen() {
 
               return (
                 <View key={dok.id} style={styles.dokterCard}>
-                  <Text style={styles.dokterName}>{dok.nama}</Text>
+                  <View style={styles.dokterHeader}>
+                    <Avatar uri={dok.foto_url} size={44} icon="doctor" />
+                    <Text style={styles.dokterName}>{dok.nama}</Text>
+                    <View style={styles.pilihBadge}>
+                      <Text style={styles.pilihBadgeText}>Pilih</Text>
+                    </View>
+                  </View>
 
                   <View style={styles.hariRow}>
                     {dok.jadwal_dokter.map((j) => {
-                      const active = activeHari === j.hari;
+                      const terpakai = bookedCount[j.id] ?? 0;
+                      const penuh = terpakai >= j.kuota;
+                      const selected = activeHari === j.hari;
+
                       return (
                         <TouchableOpacity
                           key={j.id}
-                          style={[styles.hariChip, active && styles.hariChipActive]}
+                          disabled={penuh}
+                          style={[
+                            styles.hariChip,
+                            penuh ? styles.hariChipPenuh : styles.hariChipAvailable,
+                            selected && styles.hariChipSelected,
+                          ]}
                           onPress={() =>
                             setSelectedHari((prev) => ({ ...prev, [dok.id]: j.hari }))
                           }
                         >
-                          <Text style={[styles.hariText, active && styles.hariTextActive]}>
-                            {j.hari}
-                          </Text>
+                          <Text style={styles.hariText}>{j.hari}</Text>
                         </TouchableOpacity>
                       );
                     })}
@@ -264,7 +315,9 @@ export default function JadwalkanScreen() {
                         <Text style={styles.jamText}>
                           {jadwalAktif.jam_mulai.slice(0, 5)} - {jadwalAktif.jam_selesai.slice(0, 5)}
                         </Text>
-                        <Text style={styles.kuotaText}>Available</Text>
+                        <Text style={styles.kuotaText}>
+                          Sisa {jadwalAktif.kuota - (bookedCount[jadwalAktif.id] ?? 0)} slot
+                        </Text>
                       </View>
 
                       <TouchableOpacity
@@ -347,13 +400,10 @@ const styles = StyleSheet.create({
   },
   emptyText: { fontSize: 12.5, color: '#6B6968', marginTop: 8, marginBottom: 8 },
 
-  card: {
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E4E1DA',
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 10,
+  rsCard: {
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E4E1DA',
+    borderRadius: 12, padding: 12, marginBottom: 10,
   },
   cardActive: { borderColor: '#4A3FC4', backgroundColor: '#E7E4FB' },
   cardTitle: { fontSize: 14, fontWeight: '600', color: '#1C1B29' },
@@ -363,17 +413,18 @@ const styles = StyleSheet.create({
 
   poliGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   poliCard: {
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 10,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E4E1DA',
+    width: '22.5%', paddingVertical: 14, borderRadius: 12,
+    backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E4E1DA',
+    alignItems: 'center',
   },
   poliCardActive: { backgroundColor: '#4A3FC4', borderColor: '#4A3FC4' },
-  poliLabel: { fontSize: 13, color: '#1C1B29' },
+  poliLabel: { fontSize: 11.5, color: '#1C1B29', marginTop: 6 },
   poliLabelActive: { color: '#FFFFFF', fontWeight: '600' },
 
+  dokterHeader: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    marginBottom: 12, justifyContent: 'space-between',
+  },
   dokterCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
@@ -382,17 +433,25 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E4E1DA',
   },
-  dokterName: { fontSize: 14, fontWeight: '600', color: '#1C1B29', marginBottom: 10 },
+  dokterName: { fontSize: 14, fontWeight: '600', color: '#1C1B29', flex: 1 },
   hariRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   hariChip: {
     paddingVertical: 6,
     paddingHorizontal: 12,
     borderRadius: 8,
-    backgroundColor: '#F7F5F2',
   },
-  hariChipActive: { backgroundColor: '#2E2470' },
-  hariText: { fontSize: 12, color: '#1C1B29' },
-  hariTextActive: { color: '#FFFFFF', fontWeight: '600' },
+  hariChipAvailable: { backgroundColor: '#16A38A' },
+  hariChipPenuh: { backgroundColor: '#D14343', opacity: 0.6 },
+  hariChipSelected: { borderWidth: 2, borderColor: '#1C1B29' },
+  hariText: { fontSize: 12, color: '#FFFFFF', fontWeight: '600' },
+
+  pilihBadge: {
+    backgroundColor: '#2E2470',
+    borderRadius: 8,
+    paddingVertical: 5,
+    paddingHorizontal: 12,
+  },
+  pilihBadgeText: { color: '#FFFFFF', fontSize: 11, fontWeight: '600' },
 
   jamBox: {
     marginTop: 12,

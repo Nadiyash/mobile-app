@@ -68,7 +68,7 @@ export default function KonsultasiScreen() {
         const ch = client.channel('messaging', `konsultasi-${userId}`, {
           members: [userId],
           name: 'Konsultasi dengan Dokter',
-        });
+        } as any);
 
         await ch.watch();
 

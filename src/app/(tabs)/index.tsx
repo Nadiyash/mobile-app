@@ -6,19 +6,32 @@ import {
   TouchableOpacity,
   ScrollView,
   StyleSheet,
+  Image,
 } from 'react-native';
 import { router } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { supabase } from '@/lib/supabase';
 import { Header } from '@/components/header';
 import { POLI_ICON } from '@/constants/poli-icons';
+import { Avatar } from '@/components/avatar';
+import { Footer } from '@/components/footer';
 
 type Poli = { id: string; nama: string };
+type RumahSakit = { id: string; nama: string; alamat: string; foto_url: string | null };
+type DokterRekomendasi = {
+  id: string;
+  nama: string;
+  foto_url: string | null;
+  poli: { nama: string };
+  rumah_sakit: { nama: string };
+};
 
 export default function HomeScreen() {
   const [poli, setPoli] = useState<Poli[]>([]);
   const [activeTab, setActiveTab] = useState<'Semua' | 'Rumah Sakit' | 'Dokter' | 'Poli'>('Semua');
   const [search, setSearch] = useState('');
+  const [rsList, setRsList] = useState<RumahSakit[]>([]);
+  const [dokterList, setDokterList] = useState<DokterRekomendasi[]>([]);
 
   useEffect(() => {
     const fetchPoli = async () => {
@@ -27,6 +40,22 @@ export default function HomeScreen() {
     };
     fetchPoli();
   }, []);
+  
+  useEffect(() => {
+    supabase.from('rumah_sakit').select('*').then(({ data }) => {
+      if (data) setRsList(data);
+    });
+  }, []);
+
+    useEffect(() => {
+    supabase
+      .from('dokter')
+      .select('id, nama, foto_url, poli(nama), rumah_sakit(nama)')
+      .then(({ data }) => {
+        if (data) setDokterList(data as any);
+      });
+  }, []);
+
 
   const tabs: typeof activeTab[] = ['Semua', 'Rumah Sakit', 'Dokter', 'Poli'];
 
@@ -104,6 +133,71 @@ export default function HomeScreen() {
           </View>
         </View>
 
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Rumah Sakit Unggulan</Text>
+          </View>
+          <Text style={styles.sectionSubtitle}>Diprioritaskan dari RS berlangganan</Text>
+
+          {rsList.map((rs) => (
+            <TouchableOpacity
+              key={rs.id}
+              style={styles.rsCard}
+              onPress={() => router.push('/jadwalkan')}
+            >
+              {rs.foto_url ? (
+                <Image source={{ uri: rs.foto_url }} style={styles.rsImage} />
+              ) : (
+                <View style={[styles.rsImage, styles.rsImagePlaceholder]}>
+                  <MaterialCommunityIcons name="domain" size={32} color="#4A3FC4" />
+                </View>
+              )}
+              <View style={styles.rsInfo}>
+                <Text style={styles.rsName}>{rs.nama}</Text>
+                <Text style={styles.rsAddress}>{rs.alamat}</Text>
+              </View>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Dokter Rekomendasi</Text>
+          <Text style={styles.sectionSubtitle}>Diprioritaskan dari RS berlangganan</Text>
+
+          {dokterList.map((dok) => (
+            <View key={dok.id} style={styles.dokterRekCard}>
+              {dok.foto_url ? (
+                <Image source={{ uri: dok.foto_url }} style={styles.dokterRekPhoto} />
+              ) : (
+                <View style={[styles.dokterRekPhoto, styles.dokterRekPhotoPlaceholder]}>
+                  <MaterialCommunityIcons name="doctor" size={26} color="#4A3FC4" />
+                </View>
+              )}
+              <View style={{ flex: 1 }}>
+                <Text style={styles.dokterRekName}>{dok.nama}</Text>
+                <Text style={styles.dokterRekPoli}>{dok.poli?.nama}</Text>
+                <Text style={styles.dokterRekRs}>{dok.rumah_sakit?.nama}</Text>
+
+                <View style={styles.dokterRekBtnRow}>
+                  <TouchableOpacity
+                    style={styles.dokterRekBtnOutline}
+                    onPress={() => router.push('/jadwalkan')}
+                  >
+                    <Text style={styles.dokterRekBtnOutlineText}>Jadwalkan Pemeriksaan</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.dokterRekBtnFilled}
+                    onPress={() => router.push('/konsultasi')}
+                  >
+                    <Text style={styles.dokterRekBtnFilledText}>Konsultasi Online</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
+          ))}
+        </View>
+
+        <Footer />
       </ScrollView>
     </View>
   );
@@ -195,4 +289,50 @@ const styles = StyleSheet.create({
     borderColor: '#E4E1DA',
   },
   poliLabel: { fontSize: 11.5, color: '#1C1B29', marginTop: 6 },
+
+  rsCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: '#E4E1DA',
+    overflow: 'hidden',
+  },
+  rsImage: {
+    width: '100%',
+    height: 140,
+  },
+  rsImagePlaceholder: {
+    backgroundColor: '#E7E4FB',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  rsInfo: {
+    padding: 14,
+  },
+  rsName: { fontSize: 14, fontWeight: '600', color: '#1C1B29' },
+  rsAddress: { fontSize: 12, color: '#6B6968', marginTop: 4, lineHeight: 17 },
+
+  dokterRekCard: {
+    flexDirection: 'row', gap: 12,
+    backgroundColor: '#FFFFFF', borderRadius: 14, padding: 14,
+    marginBottom: 12, borderWidth: 1, borderColor: '#E4E1DA',
+  },
+  dokterRekPhoto: { width: 56, height: 56, borderRadius: 10 },
+  dokterRekPhotoPlaceholder: { backgroundColor: '#E7E4FB', alignItems: 'center', justifyContent: 'center' },
+  dokterRekName: { fontSize: 13.5, fontWeight: '600', color: '#1C1B29' },
+  dokterRekPoli: { fontSize: 11.5, color: '#6B6968', marginTop: 2 },
+  dokterRekRs: { fontSize: 11.5, color: '#6B6968' },
+  dokterRekBtnRow: { flexDirection: 'row', gap: 6, marginTop: 8 },
+  dokterRekBtnOutline: {
+    borderWidth: 1, borderColor: '#4A3FC4', borderRadius: 8,
+    paddingVertical: 6, paddingHorizontal: 10,
+  },
+  dokterRekBtnOutlineText: { fontSize: 10.5, color: '#4A3FC4', fontWeight: '600' },
+  dokterRekBtnFilled: {
+    backgroundColor: '#16A38A', borderRadius: 8,
+    paddingVertical: 6, paddingHorizontal: 10,
+  },
+  dokterRekBtnFilledText: { fontSize: 10.5, color: '#FFFFFF', fontWeight: '600' },
 });
+
