@@ -17,13 +17,13 @@ import { Avatar } from '@/components/avatar';
 import { Footer } from '@/components/footer';
 
 type Poli = { id: string; nama: string };
-type RumahSakit = { id: string; nama: string; alamat: string; foto_url: string | null };
+type RumahSakit = { id: string; nama: string; alamat: string; foto_url: string | null; status_langganan: string };
 type DokterRekomendasi = {
   id: string;
   nama: string;
   foto_url: string | null;
   poli: { nama: string };
-  rumah_sakit: { nama: string };
+  rumah_sakit: { nama: string; status_langganan: string };
 };
 
 export default function HomeScreen() {
@@ -42,17 +42,35 @@ export default function HomeScreen() {
   }, []);
   
   useEffect(() => {
-    supabase.from('rumah_sakit').select('*').then(({ data }) => {
-      if (data) setRsList(data);
-    });
+    supabase
+      .from('rumah_sakit')
+      .select('*')
+      .order('status_langganan', { ascending: true }) 
+      .then(({ data }) => {
+        if (data) {
+          const sorted = [...data].sort((a, b) => {
+            const aAktif = a.status_langganan === 'aktif' ? 0 : 1;
+            const bAktif = b.status_langganan === 'aktif' ? 0 : 1;
+            return aAktif - bAktif;
+          });
+          setRsList(sorted);
+        }
+      });
   }, []);
 
-    useEffect(() => {
+  useEffect(() => {
     supabase
       .from('dokter')
-      .select('id, nama, foto_url, poli(nama), rumah_sakit(nama)')
+      .select('id, nama, foto_url, poli(nama), rumah_sakit(nama, status_langganan)')
       .then(({ data }) => {
-        if (data) setDokterList(data as any);
+        if (data) {
+          const sorted = [...(data as any)].sort((a, b) => {
+            const aAktif = a.rumah_sakit?.status_langganan === 'aktif' ? 0 : 1;
+            const bAktif = b.rumah_sakit?.status_langganan === 'aktif' ? 0 : 1;
+            return aAktif - bAktif;
+          });
+          setDokterList(sorted);
+        }
       });
   }, []);
 
@@ -153,7 +171,12 @@ export default function HomeScreen() {
                 </View>
               )}
               <View style={styles.rsInfo}>
-                <Text style={styles.rsName}>{rs.nama}</Text>
+                <View style={styles.rsNameRow}>
+                  <Text style={styles.rsName}>{rs.nama}</Text>
+                  {rs.status_langganan === 'aktif' && (
+                    <MaterialCommunityIcons name="star" size={14} color="#4A3FC4" />
+                  )}
+                </View>
                 <Text style={styles.rsAddress}>{rs.alamat}</Text>
               </View>
             </TouchableOpacity>
@@ -173,10 +196,15 @@ export default function HomeScreen() {
                   <MaterialCommunityIcons name="doctor" size={26} color="#4A3FC4" />
                 </View>
               )}
-              <View style={{ flex: 1 }}>
+            <View style={{ flex: 1 }}>
+              <View style={styles.dokterRekNameRow}>
                 <Text style={styles.dokterRekName}>{dok.nama}</Text>
-                <Text style={styles.dokterRekPoli}>{dok.poli?.nama}</Text>
-                <Text style={styles.dokterRekRs}>{dok.rumah_sakit?.nama}</Text>
+                {dok.rumah_sakit?.status_langganan === 'aktif' && (
+                  <MaterialCommunityIcons name="star" size={13} color="#4A3FC4" />
+                )}
+              </View>
+              <Text style={styles.dokterRekPoli}>{dok.poli?.nama}</Text>
+              <Text style={styles.dokterRekRs}>{dok.rumah_sakit?.nama}</Text>
 
                 <View style={styles.dokterRekBtnRow}>
                   <TouchableOpacity
@@ -339,5 +367,8 @@ const styles = StyleSheet.create({
     paddingVertical: 6, paddingHorizontal: 10,
   },
   dokterRekBtnFilledText: { fontSize: 10.5, color: '#FFFFFF', fontWeight: '600' },
+
+  rsNameRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  dokterRekNameRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
 });
 

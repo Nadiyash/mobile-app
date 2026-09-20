@@ -88,7 +88,7 @@ function PasienChat({ userId, userName, initialDokterId, initialDokterNama }: {
               </Channel>
             ) : (
               <ChannelList
-                filters={{ members: { $in: [userId.slice(0, 8)] } }}
+                filters={{ members: { $in: [userId] } }}
                 onSelect={(channel) => {
                   setSelectedChannel(channel);
                   setChannelName((channel.data as any)?.name ?? 'Konsultasi');

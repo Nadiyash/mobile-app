@@ -95,20 +95,6 @@ export default function JadwalkanScreen() {
     setBookingResult(null);
   }, [selectedRs]);
 
-  useEffect(() => {
-    if (!selectedRs || !selectedPoli) return;
-    const fetchDokter = async () => {
-      const { data, error } = await supabase
-        .from('dokter')
-        .select('id, nama, foto_url, jadwal_dokter(id, hari, jam_mulai, jam_selesai, kuota)')
-        .eq('rumah_sakit_id', selectedRs.id)
-        .eq('poli_id', selectedPoli.id);
-      if (!error && data) setDokterList(data as any);
-    };
-    fetchDokter();
-    setBookingResult(null);
-  }, [selectedRs, selectedPoli]);
-
   const filteredRs = rsList.filter((rs) =>
     rs.nama.toLowerCase().includes(search.toLowerCase())
   );
@@ -279,9 +265,6 @@ export default function JadwalkanScreen() {
                   <View style={styles.dokterHeader}>
                     <Avatar uri={dok.foto_url} size={44} icon="doctor" />
                     <Text style={styles.dokterName}>{dok.nama}</Text>
-                    <View style={styles.pilihBadge}>
-                      <Text style={styles.pilihBadgeText}>Pilih</Text>
-                    </View>
                   </View>
 
                   <View style={styles.hariRow}>

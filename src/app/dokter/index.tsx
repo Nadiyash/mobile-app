@@ -4,6 +4,12 @@ import { supabase } from '@/lib/supabase';
 import { Header } from '@/components/header';
 import { useAuth } from '@/context/auth-context';
 
+const STATUS_COLOR: Record<string, string> = {
+  menunggu: '#FFF4D6',
+  selesai: '#D8F3EC',
+  batal: '#FADADA',
+};
+
 type BookingRow = {
   id: string;
   nomor_antrian: string;
@@ -72,7 +78,7 @@ export default function DokterDashboard() {
           <View key={b.id} style={styles.card}>
             <View style={styles.cardHeader}>
               <Text style={styles.kode}>{b.nomor_antrian}</Text>
-              <View style={[styles.statusBadge, styles[`status_${b.status}` as keyof typeof styles]]}>
+              <View style={[styles.statusBadge, { backgroundColor: STATUS_COLOR[b.status] ?? '#EEEEEE' }]}>
                 <Text style={styles.statusText}>{b.status}</Text>
               </View>
             </View>

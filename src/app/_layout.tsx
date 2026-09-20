@@ -28,6 +28,12 @@ export default function RootLayout() {
               <Stack.Screen name="detail-booking" />
               <Stack.Screen name="dokter" />
               <Stack.Screen name="dokter/konsultasi" />
+              <Stack.Screen name="admin" />
+              <Stack.Screen name="admin/rumah-sakit" />
+              <Stack.Screen name="admin/dokter/index" />
+              <Stack.Screen name="admin/dokter/[id]/jadwal" />
+              <Stack.Screen name="admin/langganan" />
+              <Stack.Screen name="dokter/profil" />
             </Stack>
           </ThemeProvider>
         </AuthProvider>

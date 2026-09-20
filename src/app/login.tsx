@@ -31,6 +31,8 @@ export default function LoginScreen() {
 
     if (profile?.role === 'dokter') {
       router.replace('/dokter');
+    } else if (profile?.role === 'admin_rs') {
+      router.replace('/admin');
     } else {
       router.replace('/');
     }

@@ -33,12 +33,19 @@ export function HamburgerMenu({ visible, onClose }: Props) {
           {role === 'dokter' ? (
             <>
               <Text style={styles.sectionLabel}>Menu Dokter</Text>
-              <TouchableOpacity onPress={() => goTo('/dokter')}>
-                <Text style={styles.item}>Dashboard</Text>
+              <TouchableOpacity onPress={() => goTo('/dokter')}><Text style={styles.item}>Dashboard</Text></TouchableOpacity>
+              <TouchableOpacity onPress={() => goTo('/dokter/konsultasi')}><Text style={styles.item}>Konsultasi Pasien</Text></TouchableOpacity>
+              <TouchableOpacity onPress={() => goTo('/dokter/profil')}>
+                <Text style={styles.item}>Profil Saya</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => goTo('/dokter/konsultasi')}>
-                <Text style={styles.item}>Konsultasi Pasien</Text>
-              </TouchableOpacity>
+            </>
+          ) : role === 'admin_rs' ? (
+            <>
+              <Text style={styles.sectionLabel}>Menu Admin RS</Text>
+              <TouchableOpacity onPress={() => goTo('/admin')}><Text style={styles.item}>Dashboard</Text></TouchableOpacity>
+              <TouchableOpacity onPress={() => goTo('/admin/rumah-sakit')}><Text style={styles.item}>Data Rumah Sakit</Text></TouchableOpacity>
+              <TouchableOpacity onPress={() => goTo('/admin/dokter')}><Text style={styles.item}>Kelola Dokter</Text></TouchableOpacity>
+              <TouchableOpacity onPress={() => goTo('/admin/langganan')}><Text style={styles.item}>Langganan</Text></TouchableOpacity>
             </>
           ) : (
             <>
