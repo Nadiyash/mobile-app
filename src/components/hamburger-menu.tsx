@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { Modal, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import { useAuth } from '@/context/auth-context';
@@ -7,6 +8,20 @@ type Props = { visible: boolean; onClose: () => void };
 
 export function HamburgerMenu({ visible, onClose }: Props) {
   const { session } = useAuth();
+  const [role, setRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!session) {
+      setRole(null);
+      return;
+    }
+    supabase
+      .from('users')
+      .select('role')
+      .eq('id', session.user.id)
+      .single()
+      .then(({ data }) => setRole(data?.role ?? null));
+  }, [session]);
 
   const goTo = (path: string) => { onClose(); router.push(path as any); };
   const handleLogout = async () => { await supabase.auth.signOut(); onClose(); router.replace('/'); };
@@ -15,11 +30,25 @@ export function HamburgerMenu({ visible, onClose }: Props) {
     <Modal visible={visible} transparent animationType="fade">
       <TouchableOpacity style={styles.backdrop} onPress={onClose} activeOpacity={1}>
         <View style={styles.menu}>
-          <Text style={styles.sectionLabel}>Menu Pasien</Text>
-          <TouchableOpacity onPress={() => goTo('/')}><Text style={styles.item}>Beranda</Text></TouchableOpacity>
-          <TouchableOpacity onPress={() => goTo('/jadwalkan')}><Text style={styles.item}>Jadwalkan Pemeriksaan</Text></TouchableOpacity>
-          <TouchableOpacity onPress={() => goTo('/jadwal-saya')}><Text style={styles.item}>Jadwal Saya</Text></TouchableOpacity>
-          <TouchableOpacity onPress={() => goTo('/konsultasi')}><Text style={styles.item}>Konsultasi Online</Text></TouchableOpacity>
+          {role === 'dokter' ? (
+            <>
+              <Text style={styles.sectionLabel}>Menu Dokter</Text>
+              <TouchableOpacity onPress={() => goTo('/dokter')}>
+                <Text style={styles.item}>Dashboard</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => goTo('/dokter/konsultasi')}>
+                <Text style={styles.item}>Konsultasi Pasien</Text>
+              </TouchableOpacity>
+            </>
+          ) : (
+            <>
+              <Text style={styles.sectionLabel}>Menu Pasien</Text>
+              <TouchableOpacity onPress={() => goTo('/')}><Text style={styles.item}>Beranda</Text></TouchableOpacity>
+              <TouchableOpacity onPress={() => goTo('/jadwalkan')}><Text style={styles.item}>Jadwalkan Pemeriksaan</Text></TouchableOpacity>
+              <TouchableOpacity onPress={() => goTo('/jadwal-saya')}><Text style={styles.item}>Jadwal Saya</Text></TouchableOpacity>
+              <TouchableOpacity onPress={() => goTo('/konsultasi')}><Text style={styles.item}>Konsultasi Online</Text></TouchableOpacity>
+            </>
+          )}
 
           <View style={styles.divider} />
 

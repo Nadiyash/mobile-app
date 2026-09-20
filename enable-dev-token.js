@@ -3,6 +3,7 @@ const { StreamChat } = require('stream-chat');
 const API_KEY = '9k7zy54qmg7g';
 const API_SECRET = '2nwxcx2wxsa423udxsb5x8drhh4mrd23kdndn3r6jbmm8eat9awshph8sqwcn48c';
 
+
 async function main() {
   const client = StreamChat.getInstance(API_KEY, API_SECRET);
 

@@ -187,7 +187,12 @@ export default function HomeScreen() {
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={styles.dokterRekBtnFilled}
-                    onPress={() => router.push('/konsultasi')}
+                    onPress={() =>
+                      router.push({
+                        pathname: '/konsultasi',
+                        params: { dokterId: dok.id, dokterNama: dok.nama },
+                      })
+                    }
                   >
                     <Text style={styles.dokterRekBtnFilledText}>Konsultasi Online</Text>
                   </TouchableOpacity>

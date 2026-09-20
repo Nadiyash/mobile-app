@@ -13,10 +13,27 @@ export default function LoginScreen() {
   const handleLogin = async () => {
     setError('');
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error: loginError } = await supabase.auth.signInWithPassword({ email, password });
+    
+    if (loginError) {
+      setLoading(false);
+      setError(loginError.message);
+      return;
+    }
+
+    const { data: profile } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', data.user.id)
+      .single();
+
     setLoading(false);
-    if (error) { setError(error.message); return; }
-    router.replace('/');
+
+    if (profile?.role === 'dokter') {
+      router.replace('/dokter');
+    } else {
+      router.replace('/');
+    }
   };
 
   return (
