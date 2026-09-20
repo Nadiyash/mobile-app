@@ -133,19 +133,23 @@ export default function HomeScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Poli & Spesialisasi</Text>
-            <Text style={styles.sectionLink}>Lihat Semua Poli</Text>
+            {/* <Text style={styles.sectionLink}>Lihat Semua Poli</Text> */}
           </View>
           <Text style={styles.sectionSubtitle}>Pilih poli yang sesuai kebutuhan Anda</Text>
 
           <View style={styles.poliGrid}>
             {poli.map((item) => (
-              <TouchableOpacity key={item.id} style={styles.poliCard}>
+              <TouchableOpacity
+                key={item.id}
+                style={styles.poliCard}
+                onPress={() => router.push('/jadwalkan')}
+              >
                 <MaterialCommunityIcons
                   name={POLI_ICON[item.nama] ?? 'help-circle-outline'}
                   size={26}
                   color="#4A3FC4"
                 />
-                <Text style={styles.poliLabel}>{item.nama}</Text>
+                <Text style={styles.poliLabel} numberOfLines={1} adjustsFontSizeToFit>{item.nama}</Text>
               </TouchableOpacity>
             ))}
           </View>

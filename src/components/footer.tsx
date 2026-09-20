@@ -1,6 +1,12 @@
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Linking  } from 'react-native';
 import { router } from 'expo-router';
-import { TouchableOpacity } from 'react-native';
+
+const NOMOR_CS = '6283147668145'; 
+
+const openWhatsApp = (pesan: string) => {
+  const url = `https://wa.me/${NOMOR_CS}?text=${encodeURIComponent(pesan)}`;
+  Linking.openURL(url);
+};
 
 export function Footer() {
   return (
@@ -17,8 +23,23 @@ export function Footer() {
       </TouchableOpacity>
 
       <Text style={[styles.sectionLabel, { marginTop: 20 }]}>Lainnya</Text>
-      <Text style={styles.item}>Customer Service</Text>
-      <Text style={styles.item}>Daftarkan Rumah Sakit Anda</Text>
+      <TouchableOpacity
+        onPress={() =>
+          openWhatsApp('Halo VitaCare, saya butuh bantuan terkait aplikasi.')
+        }
+      >
+        <Text style={styles.item}>Customer Service</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        onPress={() =>
+          openWhatsApp(
+            'Halo VitaCare, saya ingin mendaftarkan rumah sakit saya untuk bergabung.\n\nNama RS: \nAlamat: \nNarahubung: '
+          )
+        }
+      >
+        <Text style={styles.item}>Daftarkan Rumah Sakit Anda</Text>
+      </TouchableOpacity>
     </View>
   );
 }
