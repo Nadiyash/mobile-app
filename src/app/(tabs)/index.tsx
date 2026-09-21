@@ -31,7 +31,8 @@ export default function HomeScreen() {
   const [activeTab, setActiveTab] = useState<'Semua' | 'Rumah Sakit' | 'Dokter' | 'Poli'>('Semua');
   const [search, setSearch] = useState('');
   const [rsList, setRsList] = useState<RumahSakit[]>([]);
-  const [dokterList, setDokterList] = useState<DokterRekomendasi[]>([]);
+  const [dokterList, setDokterList] = useState<DokterRekomendasi[]>([]);  
+  const [showResults, setShowResults] = useState(false);
 
   useEffect(() => {
     const fetchPoli = async () => {
@@ -73,6 +74,14 @@ export default function HomeScreen() {
         }
       });
   }, []);
+
+  const searchLower = search.toLowerCase();
+
+  const filteredRs = rsList.filter((rs) => rs.nama.toLowerCase().includes(searchLower));
+  const filteredDokter = dokterList.filter((d) => d.nama.toLowerCase().includes(searchLower));
+  const filteredPoli = poli.filter((p) => p.nama.toLowerCase().includes(searchLower));
+
+  const hasResults = filteredRs.length > 0 || filteredDokter.length > 0 || filteredPoli.length > 0;
 
 
   const tabs: typeof activeTab[] = ['Semua', 'Rumah Sakit', 'Dokter', 'Poli'];
@@ -123,7 +132,10 @@ export default function HomeScreen() {
                 onChangeText={setSearch}
                 style={styles.searchInput}
               />
-              <TouchableOpacity style={styles.searchBtn}>
+              <TouchableOpacity
+                style={styles.searchBtn}
+                onPress={() => setShowResults(search.trim().length > 0)}
+              >
                 <Text style={styles.searchBtnText}>Cari</Text>
               </TouchableOpacity>
             </View>
@@ -135,6 +147,61 @@ export default function HomeScreen() {
             <Text style={styles.sectionTitle}>Poli & Spesialisasi</Text>
             {/* <Text style={styles.sectionLink}>Lihat Semua Poli</Text> */}
           </View>
+
+          {showResults && (
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Hasil Pencarian: "{search}"</Text>
+                <TouchableOpacity onPress={() => { setShowResults(false); setSearch(''); }}>
+                  <Text style={styles.sectionLink}>Tutup</Text>
+                </TouchableOpacity>
+              </View>
+
+              {!hasResults && (
+                <Text style={styles.sectionSubtitle}>Tidak ada hasil ditemukan</Text>
+              )}
+
+              {filteredRs.length > 0 && (
+                <>
+                  <Text style={styles.resultGroupLabel}>Rumah Sakit</Text>
+                  {filteredRs.map((rs) => (
+                    <TouchableOpacity key={rs.id} style={styles.resultRow} onPress={() => router.push('/jadwalkan')}>
+                      <MaterialCommunityIcons name="domain" size={18} color="#4A3FC4" />
+                      <Text style={styles.resultText}>{rs.nama}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </>
+              )}
+
+              {filteredDokter.length > 0 && (
+                <>
+                  <Text style={styles.resultGroupLabel}>Dokter</Text>
+                  {filteredDokter.map((d) => (
+                    <TouchableOpacity
+                      key={d.id}
+                      style={styles.resultRow}
+                      onPress={() => router.push({ pathname: '/konsultasi', params: { dokterId: d.id, dokterNama: d.nama } })}
+                    >
+                      <MaterialCommunityIcons name="doctor" size={18} color="#4A3FC4" />
+                      <Text style={styles.resultText}>{d.nama}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </>
+              )}
+
+              {filteredPoli.length > 0 && (
+                <>
+                  <Text style={styles.resultGroupLabel}>Poli</Text>
+                  {filteredPoli.map((p) => (
+                    <TouchableOpacity key={p.id} style={styles.resultRow} onPress={() => router.push('/jadwalkan')}>
+                      <MaterialCommunityIcons name={POLI_ICON[p.nama] ?? 'help-circle-outline'} size={18} color="#4A3FC4" />
+                      <Text style={styles.resultText}>{p.nama}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </>
+              )}
+            </View>
+          )}
           <Text style={styles.sectionSubtitle}>Pilih poli yang sesuai kebutuhan Anda</Text>
 
           <View style={styles.poliGrid}>
@@ -374,5 +441,13 @@ const styles = StyleSheet.create({
 
   rsNameRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   dokterRekNameRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+
+  resultGroupLabel: { fontSize: 12, fontWeight: '700', color: '#6B6968', marginTop: 12, marginBottom: 8, textTransform: 'uppercase' },
+  resultRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    backgroundColor: '#FFFFFF', borderRadius: 10, padding: 12,
+    marginBottom: 8, borderWidth: 1, borderColor: '#E4E1DA',
+  },
+  resultText: { fontSize: 13, color: '#1C1B29' },
 });
 

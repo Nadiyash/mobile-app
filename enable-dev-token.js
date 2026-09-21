@@ -12,7 +12,6 @@ async function main() {
   });
 
   console.log('Berhasil! disable_auth_checks sekarang: true');
-  console.log('devToken sekarang bisa dipake buat testing di app kamu.');
 }
 
 main().catch((err) => {
